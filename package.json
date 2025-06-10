@@ -1,0 +1,24 @@
+{
+  "name": "discord-bot-matcha",
+  "version": "1.0.0",
+  "main": "index.js",
+  
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "bun --watch index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0",
+    "node-cache": "^5.1.2",
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
