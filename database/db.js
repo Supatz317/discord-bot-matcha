@@ -145,4 +145,16 @@ AND DATE_TRUNC('day', message.timestamp) = ${today_date}::timestamp;`;
   }
 }
 
-export { sql, queryChannel, setCache, getCache, cachedQuery, getChannel, getAllMembers, getTeamInfo, getLeavePerson, getUpdateMessage };
+// get registered channels
+async function getRegisteredChannels() {
+  try {
+    const rows = await sql`SELECT channel_id FROM team`;
+    // console.log('Registered channels retrieved:', rows);
+    return rows.map(c => ({ channel_id: c.channel_id }));
+  } catch (error) {
+    console.error('Error retrieving registered channels:', error);
+    throw error;
+  }
+}
+
+export { getRegisteredChannels, sql, queryChannel, setCache, getCache, cachedQuery, getChannel, getAllMembers, getTeamInfo, getLeavePerson, getUpdateMessage };

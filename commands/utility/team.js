@@ -11,15 +11,18 @@ export const data = new SlashCommandBuilder()
             .setRequired(false)
     );
 export async function execute(interaction) {
+    const hidden = interaction.options.getBoolean('hidden') || false;
+    
+    const channel = interaction.channel;
+    const channelId = channel.id;
+
+
     const leaveType = {
         'sick_leave' : 'ลาป่วย',
         'personal_leave' : 'ลากิจ',
         'annual_leave' : 'ลาพักร้อน'
     }
 
-    const hidden = interaction.options.getBoolean('hidden') || false;
-    const channel = interaction.channel;
-    const channelId = channel.id;
 
     const update = await getUpdateMessage(channelId);
 

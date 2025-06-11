@@ -32,7 +32,7 @@ export async function execute(interaction) {
 
             // Optionally, send an ephemeral follow-up message to the user who clicked the button
             // This confirms the action but doesn't clutter the channel.
-            await interaction.reply({ content: 'ข้อความถูกลบเรียบร้อยแล้วค่ะ', flags: MessageFlags.Ephemeral  });
+            // await interaction.reply({ content: 'ข้อความถูกลบเรียบร้อยแล้วค่ะ', flags: MessageFlags.Ephemeral  });
 
         } catch (error) {
             console.error('Failed to delete message:', error);
