@@ -86,9 +86,29 @@ async function getTeamInfo(channel_id) {
   }
 }
 
+function getDatetimeNow() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // Months are 0-indexed
+  const day = now.getDate();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+
+  // Pad single-digit numbers with a leading zero
+  const formattedMonth = month < 10 ? '0' + month : month;
+  const formattedDay = day < 10 ? '0' + day : day;
+  const formattedHours = hours < 10 ? '0' + hours : hours;
+  const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+  const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+
+  return `${year}-${formattedMonth}-${formattedDay}`;
+}
+
 // get leave person
 async function getLeavePerson(channel_id) {
-  const today_date = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+  const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
   // const today_date = '2025-06-09'; // For testing, use a fixed date
   console.log('Today date:', today_date, 'Channel ID:', channel_id);
   
@@ -98,7 +118,7 @@ async function getLeavePerson(channel_id) {
     on member_team.author_id=attendance.author_id 
     where member_team.channel_id=${channel_id}
     and absent_date=${today_date};`;
-    console.log('Leave person retrieved:', rows);
+    // console.log('Leave person retrieved:', rows);
     return rows;
   } catch (error) {
     console.error('Error retrieving leave person:', error);
@@ -108,15 +128,16 @@ async function getLeavePerson(channel_id) {
 
 // get update message
 async function getUpdateMessage(channel_id) {
-  const today_date = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+  // const now = new Date();
+  const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
   // const today_date = '2025-06-09'; // For testing, use a fixed date
-
+  console.log('[✅GET UPDATE MESSAGE] Today date:', today_date, 'Channel ID:', channel_id);
   try {
     const rows = await sql`select distinct(author_id) 
 from message 
 where channel_id=${channel_id}
 AND DATE_TRUNC('day', message.timestamp) = ${today_date}::timestamp;`;
-    console.log('Update message retrieved:', rows);
+    // console.log('Update message retrieved:', rows);
     return rows;
   } catch (error) {
     console.error('Error retrieving update message:', error);
