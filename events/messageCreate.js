@@ -120,7 +120,7 @@ module.exports = {
 
         } else if (!channelExists(channelList, message.channel.id)) {
             // console.log(`Channel [${message.channel.name}] is not registered. Skipping message processing.`);
-            return;
+            return; 
         } 
 
 
