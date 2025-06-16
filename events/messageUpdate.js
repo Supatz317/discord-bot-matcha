@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, Events } = require('discord.js');
-
+const axios = require('axios');
+const dotenv = require('dotenv');
 
 module.exports = {
     name: Events.MessageUpdate,
@@ -17,18 +18,37 @@ module.exports = {
         const payload = {
             service: 'messageUpdate',
             timestamp: new Date().toISOString(),
-            data: {
+            // data: {
                 id: newMessage.id,
                 content: newMessage.content,
-                channelId: newMessage.channel.id,
-                guildId: newMessage.guild.id,
-                authorId: newMessage.author.id,
-            }
+                channel_id: newMessage.channel.id,
+                guild_id: newMessage.guild.id,
+                author_id: newMessage.author.id,
+
+            // }
+
+            id: newMessage.id, 
+                author: {
+                    id: newMessage.author.id,
+                    username: newMessage.author.username,
+                    global_name: newMessage.author.globalName,
+                    server_name: newMessage.author.displayName,
+                    discriminator: newMessage.author.discriminator,
+                    bot: newMessage.author.bot,
+                    avatar: newMessage.author.avatarURL() || null
+                }, 
+                channel: {
+                    id: newMessage.channel.id,
+                    name: newMessage.channel.name,
+                    category: newMessage.channel.parent?.name || null
+                },
+                content: newMessage.content, 
+                timestamp: newMessage.createdAt.toISOString(),
         }
         
         // Send to n8n
         if (!await sendToN8n(payload)) { 
-            logger.warn(`[] Failed to process message ${message.id}`);
+            console.log(`[] Failed to process message `);
         }
     }
 }
@@ -36,13 +56,13 @@ module.exports = {
 
 
 
-async function sendToN8n(data) {
+async function sendToN8n(payload) {
     try {
-      const response = await axios.post(process.env.N8N_WEBHOOK, data, { timeout: 5000 });
-      logger.info(`Successfully sent message ${data.id} to n8n`);
+      const response = await axios.post(process.env.N8N_WEBHOOK, payload, { timeout: 5000 });
+      console.log(`Successfully sent message ${payload.id} to n8n`);
       return true;
     } catch (error) {
-      logger.error(`Failed to send to n8n: ${error.message}`); 
+      console.log(`Failed to send to n8n: ${error}`); 
       return false;
     }
   }
