@@ -9,16 +9,18 @@ export async function execute(interaction) {
             if (!command) {
                 console.error(`No command matching ${interaction.commandName} was found.`);
                 return;
-            }
-            try {
+            }            try {
                 // Execute the command's logic
                 await command.execute(interaction);
             } catch (error) {
-                console.error(error);
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral  });
-                } else {
-                    await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral  });
+                console.error('Error executing command:', error);
+                // Only reply if we haven't already replied or deferred
+                if (!interaction.replied && !interaction.deferred) {
+                    try {
+                        await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+                    } catch (replyError) {
+                        console.error('Error sending error reply:', replyError);
+                    }
                 }
             }
         }

@@ -65,7 +65,7 @@ async function getChannel() {
 async function getAllMembers(channel_id) {
   try {
     const rows = await sql`SELECT author_id FROM member_team WHERE channel_id = ${channel_id} ORDER BY server_name`;
-    console.log('Members retrieved:', rows);
+    // console.log('Members retrieved:', rows);
     return rows;
   } catch (error) {
     console.error('Error retrieving members:', error);
@@ -78,7 +78,7 @@ async function getAllMembers(channel_id) {
 async function getTeamInfo(channel_id) {
   try {
     const rows = await sql`SELECT * FROM team WHERE channel_id = ${channel_id}`;
-    console.log('Team info retrieved:', rows);
+    // console.log('Team info retrieved:', rows);
     return rows;
   } catch (error) {
     console.error('Error retrieving team info:', error);
@@ -86,7 +86,7 @@ async function getTeamInfo(channel_id) {
   }
 }
 
-function getDatetimeNow() {
+export function getDatetimeNow() {
   const now = new Date();
 
   const year = now.getFullYear();
@@ -107,17 +107,20 @@ function getDatetimeNow() {
 }
 
 // get leave person
-async function getLeavePerson(channel_id) {
-  const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
+async function getLeavePerson(channel_id, date_specific = null) {
+  if (!date_specific) {
+    date_specific = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
+  }
+    // const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
   // const today_date = '2025-06-09'; // For testing, use a fixed date
-  console.log('Today date:', today_date, 'Channel ID:', channel_id);
+  console.log('Today date:', date_specific, 'Channel ID:', channel_id);
   
   try {
     const rows = await sql`select * from attendance 
     inner join member_team
     on member_team.author_id=attendance.author_id 
     where member_team.channel_id=${channel_id}
-    and absent_date=${today_date};`;
+    and absent_date=${date_specific};`;
     // console.log('Leave person retrieved:', rows);
     return rows;
   } catch (error) {
@@ -127,16 +130,19 @@ async function getLeavePerson(channel_id) {
 }
 
 // get update message
-async function getUpdateMessage(channel_id) {
+async function getUpdateMessage(channel_id, date_specific = null) {
+  if (!date_specific) {
+    date_specific = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
+  }
   // const now = new Date();
-  const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
+  // const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
   // const today_date = '2025-06-09'; // For testing, use a fixed date
-  console.log('[✅GET UPDATE MESSAGE] Today date:', today_date, 'Channel ID:', channel_id);
+  console.log('[✅GET UPDATE MESSAGE] Today date:', date_specific, 'Channel ID:', channel_id);
   try {
     const rows = await sql`select distinct(author_id) 
 from message 
 where channel_id=${channel_id}
-AND DATE_TRUNC('day', message.timestamp) = ${today_date}::timestamp;`;
+AND DATE_TRUNC('day', message.timestamp) = ${date_specific}::timestamp;`;
     // console.log('Update message retrieved:', rows);
     return rows;
   } catch (error) {

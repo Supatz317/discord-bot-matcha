@@ -1,4 +1,4 @@
-import { sql, getAllMembers, getTeamInfo, getLeavePerson, getUpdateMessage } from '../database/db.js';
+import { sql, getAllMembers, getTeamInfo, getLeavePerson, getUpdateMessage, getDatetimeNow } from '../database/db.js';
 import { SlashCommandBuilder, MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 
@@ -44,7 +44,7 @@ export async function getStandupInfo(channel) {
         }).join('\n')
     );
 
-    console.log('Member Mentions Batches:', memberMentionsBatches);
+    // console.log('Member Mentions Batches:', memberMentionsBatches);
 
     const teamInfo = await getTeamInfo(channelId);
     const teamName = teamInfo[0].team_name || 'Unknown Team';
@@ -60,16 +60,17 @@ export async function getStandupInfo(channel) {
         })
     }
 
+
     const embed = new EmbedBuilder()
     .setColor('#0099ff')
-    .setTitle(`รายละเอียดทีม 📋 <#${channelId}>`)
+    .setTitle(`รายละเอียดทีม 📋 <#${channelId}> ประจำวันที่ ${getDatetimeNow()}`)
     
         .setFields([
-            {
-                name: 'ชื่อทีม',
-                value: `> ${teamName}`,
-                inline: false
-            },
+            // {
+            //     name: 'ชื่อทีม',
+            //     value: `> ${teamName}`,
+            //     inline: false
+            // },
             // add member mentions in batches
             ...memberMentions,
             {
