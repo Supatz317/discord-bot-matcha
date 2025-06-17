@@ -23,6 +23,7 @@ services:
       ATTENDANCE_EMPLOYEE_CHANNEL_ID: "${ATTENDANCE_EMPLOYEE_CHANNEL_ID}"
       ATTENDANCE_DEMO: "${ATTENDANCE_DEMO}"
       DASHBOARD_URL: "${DASHBOARD_URL}"
+    restart: unless-stopped
 
 
 # The commented out section below is an example of how to define a PostgreSQL
