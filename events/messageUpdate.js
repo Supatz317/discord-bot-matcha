@@ -64,7 +64,7 @@ module.exports = {
             if (!await sendToN8n(payload)) {
                 console.log(`[] Failed to process message `);
             }
-        } else if (!channelExists(channelList, message.channel.id)) {
+        } else if (!channelExists(channelList, newMessage.channel.id)) {
             // console.log(`Channel [${message.channel.name}] is not registered. Skipping message processing.`);
             return; 
         } 
