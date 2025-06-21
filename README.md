@@ -55,9 +55,9 @@ Before setting up this project, ensure you have the following requirements:
 3. **Required Database Tables:**
    The bot requires the following tables (will be created automatically or via migrations):
    - `team` - Store team information
-   - `members` - Store team members
+   - `member_team` - Store team members
    - `message` - Store message tracking
-   - `leave_person` - Store leave requests
+   - `attendance` - Store leave requests
 
 ### 4. N8N Workflow Automation
 1. **N8N Instance:**
@@ -84,13 +84,9 @@ N8N_WEBHOOK=your_n8n_webhook_url
 DATABASE_URL=postgresql://user:password@host:port/database
 
 # Channel IDs (configure based on your server)
-TARGET_CHANNEL_ID=your_target_channel_id
 ATTENDANCE_TRAINEE_CHANNEL_ID=your_trainee_channel_id
 ATTENDANCE_EMPLOYEE_CHANNEL_ID=your_employee_channel_id
-ATTENDANCE_DEMO=your_demo_channel_id
 
-# Dashboard URL (optional)
-DASHBOARD_URL=your_google_sheets_or_dashboard_url
 ```
 
 ### 6. Docker (Optional)
@@ -144,9 +140,9 @@ Before proceeding with installation:
 
 5. **Start the bot:**
    ```powershell
-   bun start
+   bun start index.js
    # or
-   npm start
+   npm start index.js
    ```
 
 ## Docker Deployment
@@ -155,23 +151,23 @@ For production deployment using Docker:
 
 1. **Build and run with Docker Compose:**
    ```powershell
-   docker-compose up -d
+   docker-compose up -d --build
    ```
 
 2. **View logs:**
    ```powershell
-   docker-compose logs -f
+   docker-compose logs <container_id>
    ```
 
 ## Available Commands
 
-- `/team` - Display team information and member status
-- `/register` - Register your team in the system
+- `/team` - Display team information and member status (ใช้เรียกสรุปstandup ตอนเช้า, มี option ซ่อนข้อความ(สำหรับเทส) กับเลือกวันแสดงข้อมูล)  
+- `/register` - Register your team in the system (ดึงประวัติแชท เก็บข้อมูลห้องที่ใช้อัพเดทสแตนด์อัพ เป็น hook ต่อที่n8n)
 - `/add` - Add a member to your team
 - `/remove` - Remove a member from your team
 - `/ping` - Test bot connectivity
 - `/guide` - Show bot usage guide
-- `/track` - Track attendance and updates
+- `/track` - Track attendance and updates (case บอทไม่ดึงmessage หรือดึงแต่ดึงผิด เรียกอีกรอบ ใส่message id ตามเข้าไป)
 
 ## Features
 
