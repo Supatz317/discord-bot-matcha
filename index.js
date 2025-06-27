@@ -1,15 +1,17 @@
 import { readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { Client, Collection, GatewayIntentBits, Options } from 'discord.js';
-
 import { fileURLToPath } from 'url';
-// import { dirname, join } from 'path';
+import { performance } from 'perf_hooks';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-import dotenv from 'dotenv'; // This imports the dotenv module
-dotenv.config(); 
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Import the enhanced logger
+import logger from './utils/logger.js'; 
 
 const client = new Client({ 
 	intents: [
@@ -22,6 +24,16 @@ const client = new Client({
 		MessageManager: 200, // Cache up to 200 messages per channel
 	}),
 }); 
+
+// Log bot initialization
+logger.info('bot.startup', 'Discord bot starting up', {
+    category: 'SYSTEM',
+    details: { 
+        nodeVersion: process.version,
+        botVersion: '1.0.0',
+        intents: ['Guilds', 'GuildMembers', 'GuildMessages', 'MessageContent']
+    }
+});
 
 client.userConversationStates = new Map(); // {user_id: {step: '...', data: {...}}}
 
@@ -50,6 +62,7 @@ for (const folder of commandFolders) {
 	const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 	for (const file of commandFiles) {
 		const filePath = join(commandsPath, file);
+		const startTime = performance.now();
 
 		try {
             // Node.js dynamic import expects a URL-like path, not a file system path
@@ -61,12 +74,25 @@ for (const folder of commandFolders) {
             
             if ('data' in command && 'execute' in command) {
                 client.commands.set(command.data.name, command);
-                console.log(`[INFO] Loaded command: ${command.data.name}`);
+                const loadTime = Math.round(performance.now() - startTime);
+                
+                await logger.info('command.loaded', `Command loaded: ${command.data.name}`, {
+                    category: 'SYSTEM',
+                    commandName: command.data.name,
+                    executionTimeMs: loadTime,
+                    details: { filePath, folder }
+                });
             } else {
-                console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+                await logger.warn('command.invalid', `Command missing required properties`, {
+                    category: 'SYSTEM',
+                    details: { filePath, missingProperties: ['data', 'execute'] }
+                });
             }
         } catch (error) {
-            console.error(`[ERROR] Could not load command from ${filePath}:`, error);
+            await logger.error('command.load_failed', `Failed to load command from ${filePath}`, error, {
+                category: 'SYSTEM',
+                details: { filePath, folder }
+            });
         }
 	}
 }
@@ -74,7 +100,7 @@ for (const folder of commandFolders) {
 
 const eventsPath = join(__dirname, 'events');
 const eventFiles = readdirSync(eventsPath).filter(file => file.endsWith('.js'));
-// console.log(`Found ${eventFiles.length} event files. - eventFiles: ${eventFiles.join(', ')}`);
+
 for (const file of eventFiles) {
 	const filePath = join(eventsPath, file);
 	try {
@@ -85,14 +111,29 @@ for (const file of eventFiles) {
         const event = eventModule.default || eventModule; // Handle default exports or named exports
 
         if (event.once) {
-            console.log(`[INFO] Loaded event: ${event.name} (once)`);
-            client.once(event.name, (...args) => event.execute(...args));
+            await logger.info('event.loaded', `Loaded one-time event: ${event.name}`, {
+                category: 'SYSTEM',
+                eventType: event.name,
+                details: { filePath, once: true }
+            });
+            client.once(event.name, (...args) => {
+                event.execute(...args);
+            });
         } else {
-            console.log(`[INFO] Loaded event: ${event.name}`);
-            client.on(event.name, (...args) => event.execute(...args));
+            await logger.info('event.loaded', `Loaded recurring event: ${event.name}`, {
+                category: 'SYSTEM',
+                eventType: event.name,
+                details: { filePath, once: false }
+            });
+            client.on(event.name, (...args) => {
+                event.execute(...args);
+            });
         }
     } catch (error) {
-        console.error(`[ERROR] Could not load event from ${filePath}:`, error);
+        await logger.error('event.load_failed', `Failed to load event from ${filePath}`, error, {
+            category: 'SYSTEM',
+            details: { filePath }
+        });
     }
 }
 

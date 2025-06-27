@@ -6,10 +6,10 @@ const sql = postgres(connectionString)
 
 sql`SELECT 1`
   .then(() => {
-    console.log('Database connection successful');
+    console.log(`[${new Date().toISOString()}] [DB-CONNECTION] Database connection successful`);
   })
   .catch((error) => {
-    console.error('Database connection failed:', error);
+    console.error(`[${new Date().toISOString()}] [DB-CONNECTION] Database connection failed:`, error);
   });
   
 // export default sql
@@ -37,7 +37,7 @@ async function cachedQuery(key, query, params = [], ttl = 3600) {
   let data = cache.get(key);
   
   if (data === undefined) {
-    console.log(`Cache miss for ${key}, querying database...`);
+    console.log(`[${new Date().toISOString()}] [CACHE-MISS] ${key}, querying database...`);
     data = await sql`SELECT channel_id FROM team`;
     // console.log(`Data retrieved: ${JSON.stringify(data)}`);
 
@@ -113,7 +113,7 @@ async function getLeavePerson(channel_id, date_specific = null) {
   }
     // const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
   // const today_date = '2025-06-09'; // For testing, use a fixed date
-  console.log('Today date:', date_specific, 'Channel ID:', channel_id);
+  // console.log(`[${new Date().toISOString()}] [GET-LEAVE-PERSON] Date: ${date_specific}, Channel ID: ${channel_id}`);
   
   try {
     const rows = await sql`select * from attendance 
@@ -124,7 +124,7 @@ async function getLeavePerson(channel_id, date_specific = null) {
     // console.log('Leave person retrieved:', rows);
     return rows;
   } catch (error) {
-    console.error('Error retrieving leave person:', error);
+    console.error(`[${new Date().toISOString()}] [GET-LEAVE-PERSON] Error retrieving leave person:`, error);
     throw error;
   }
 }
@@ -137,7 +137,7 @@ async function getUpdateMessage(channel_id, date_specific = null) {
   // const now = new Date();
   // const today_date = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
   // const today_date = '2025-06-09'; // For testing, use a fixed date
-  console.log('[✅GET UPDATE MESSAGE] Today date:', date_specific, 'Channel ID:', channel_id);
+  // console.log(`[${new Date().toISOString()}] [GET-UPDATE-MESSAGE] Date: ${date_specific}, Channel ID: ${channel_id}`);
   try {
     const rows = await sql`select distinct(author_id) 
 from message 
@@ -146,7 +146,7 @@ AND DATE_TRUNC('day', message.timestamp) = ${date_specific}::timestamp;`;
     // console.log('Update message retrieved:', rows);
     return rows;
   } catch (error) {
-    console.error('Error retrieving update message:', error);
+    console.error(`[${new Date().toISOString()}] [GET-UPDATE-MESSAGE] Error retrieving update message:`, error);
     throw error;
   }
 }
@@ -158,9 +158,44 @@ async function getRegisteredChannels() {
     // console.log('Registered channels retrieved:', rows);
     return rows.map(c => ({ channel_id: c.channel_id }));
   } catch (error) {
-    console.error('Error retrieving registered channels:', error);
+    console.error(`[${new Date().toISOString()}] [GET-REGISTERED-CHANNELS] Error retrieving registered channels:`, error);
     throw error;
   }
 }
 
-export { getRegisteredChannels, sql, queryChannel, setCache, getCache, cachedQuery, getChannel, getAllMembers, getTeamInfo, getLeavePerson, getUpdateMessage };
+async function getLeaveMessage(date_specific = null){
+    if (!date_specific) {
+    date_specific = getDatetimeNow(); // Get today's date in YYYY-MM-DD format
+  }
+
+  try {
+    const rows = await sql`select 
+  team.team_name, 
+  team.channel_id,
+  member_team.server_name, 
+  member_team.author_id,
+  attendance.content, 
+  attendance.leave_type,
+  attendance.partial_leave,
+  absent_date 
+from attendance 
+inner join member_team
+on member_team.author_id=attendance.author_id  
+inner join team on member_team.channel_id=team.channel_id
+where attendance.absent_date=${date_specific}'
+ORDER BY 
+  CASE 
+    WHEN team.team_name LIKE '%trainee' THEN 2 
+    ELSE 1 
+  END, 
+  team.team_name;`;
+    // console.log('Leave messages retrieved:', rows);
+    return rows;
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] [GET-LEAVE-MESSAGE] Error retrieving leave messages:`, error);
+    throw error;
+  }
+
+}
+
+export { getRegisteredChannels, sql, queryChannel, setCache, getCache, cachedQuery, getChannel, getAllMembers, getTeamInfo, getLeavePerson, getUpdateMessage, getLeaveMessage };

@@ -1,10 +1,12 @@
 const { getChannel, setCache, getCache } = require('../database/db.js');
 const { sql } = require('../database/db');
-
 const { Client, GatewayIntentBits, Events } = require('discord.js');
 const axios = require('axios');
 const dotenv = require('dotenv');
+const { performance } = require('perf_hooks');
 
+// Import the logger (convert to require since this file uses CommonJS)
+const logger = require('../utils/logger.js').default;
 
 dotenv.config();
 
@@ -21,10 +23,10 @@ function channelExists(list, channelId) {
 async function sendToN8n(data) {
     try {
         const response = await axios.post(process.env.N8N_WEBHOOK, data, { timeout: 5000 });
-        console.log(`Successfully sent message ${data.id} to n8n`);
+        // console.log(`Successfully sent message ${data.id} to n8n`);
         return true;
     } catch (error) {
-        console.log(`Failed to send to n8n: ${error.message}`);
+        // console.log(`Failed to send to n8n: ${error.message}`);
         return false;
     }
 }
@@ -33,27 +35,42 @@ async function sendToN8n(data) {
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
+        const startTime = performance.now();
         let messageData = {};
-        // Load channel list from database
-        const channelList = await getCache('channels');
-        // console.log(`2.Loaded ${channelList.length} registered channels from database.`);
 
-        if (!channelList || channelList.length === 0) {
-            console.log('channelList is empty or not loaded.');
-            const channels = getChannel(); // or await queryChannel() if that's your function
-            setCache('channels', channels);
-            return;
-        }
+        try {
+            // Log only the core message creation event
+            await logger.logEvent({
+                eventType: 'messageCreate',
+                eventData: {
+                    guildId: message.guild?.id,
+                    channelId: message.channel.id,
+                    userId: message.author.id,
+                    username: message.author.username,
+                    bot: message.author.bot,
+                    contentLength: message.content.length,
+                    hasAttachments: message.attachments.size > 0
+                }
+            });
 
-        // some bot send update message to channel
+            // Load channel list from database
+            const channelList = await getCache('channels');
 
+            if (!channelList || channelList.length === 0) {
+                const channels = getChannel();
+                setCache('channels', channels);
+                return;
+            }
 
-        // if the message is from a DM, ignore it
-        if (!message.guild) return;
+            // if the message is from a DM, ignore it
+            if (!message.guild) {
+                return;
+            }
 
-        // leave message | attendance message
-        if (attendance.includes(message.channel.id)) {
-            console.log(`[attendance] Processing message from ${message.author.username}: ${message.content.substring(0, 50)}...`);
+            // leave message | attendance message
+            if (attendance.includes(message.channel.id)) {
+                console.log(`[${new Date().toISOString()}] [ATTENDANCE] ${message.author.username}-${message.author.id}: ${message.content.substring(0, 50)}...`);
+            
             // Prepare data for n8n 
             messageData = {
                 service: 'attendance',
@@ -78,12 +95,13 @@ module.exports = {
             }
         }
         else if (channelExists(channelList, message.channel.id)) {
-            console.log(`[MESSAGE] Processing message from ${message.author.username}: ${message.content.substring(0, 50)}...`);
-
+            // console.log(`[MESSAGE] Processing message from ${message.author.username}: ${message.content.substring(0, 50)}...`);
+            
             if (message.author.bot) {
                 if (message.author.id != '1365964985871630447') { // ignore matcha bot
                     // regex match author id by <@123456789012345678>
                     const author_id = message.content.match(/<@!?(\d+)>/);
+                    console.log(`[${new Date().toISOString()}] [MESSAGE-CREATE] ${message.author.username}-${author_id}: ${message.content.substring(0, 50).replaceAll('\n', '')}...`);
 
                     messageData = {
                         service: 'botMessage',
@@ -103,6 +121,7 @@ module.exports = {
             }
             // Prepare data for n8n
             else {
+            console.log(`[${new Date().toISOString()}] [MESSAGE-CREATE] ${message.author.username}-${message.author.id}: ${message.content.substring(0, 50).replaceAll('\n', '')}...`);
                 messageData = {
                 service: 'messageCreate',
                 id: message.id,
@@ -145,18 +164,23 @@ module.exports = {
             
 
         } else if (!channelExists(channelList, message.channel.id)) {
-            // console.log(`Channel [${message.channel.name}] is not registered. Skipping message processing.`);
             return;
         }
 
-
-
-
         // Send to n8n
-        if (!await sendToN8n(messageData)) {
-            console.log(`[] Failed to process message ${message.id}`);
+        if (Object.keys(messageData).length > 0) {
+            await sendToN8n(messageData);
         }
 
-
+    } catch (error) {
+        // Log any errors during message processing
+        await logger.error('message.processing_failed', 'Message processing failed', error, {
+            category: 'EVENT',
+            guildId: message.guild?.id,
+            channelId: message.channel.id,
+            userId: message.author.id,
+            details: { messageId: message.id }
+        });
     }
+}
 };

@@ -3,6 +3,9 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const { getChannel, setCache, getCache } = require('../database/db.js');
 
+// Import logger
+const logger = require('../utils/logger.js').default;
+
 function channelExists(list, channelId) {
     return list.some(c => c.channel_id === channelId);
 }
@@ -10,68 +13,78 @@ function channelExists(list, channelId) {
 module.exports = {
     name: Events.MessageUpdate,
     async execute(oldMessage, newMessage) {
-        if (oldMessage.author.bot) return;
+        try {
+            // Only log if it's not a bot and content actually changed
+            if (oldMessage.author.bot) return;
+            if (oldMessage.content === newMessage.content) return;
 
-        // Check if content has actually changed
-        if (oldMessage.content === newMessage.content) return;
-
-        const channelList = await getCache('channels');
-        // console.log(`2.Loaded ${channelList.length} registered channels from database.`);
-
-        if (!channelList || channelList.length === 0) {
-            console.log('channelList is empty or not loaded.');
-            const channels = getChannel(); // or await queryChannel() if that's your function
-            setCache('channels', channels);
-            return;
-        }
-
-        if (!newMessage.guild) return;
-
-        if (channelExists(channelList, newMessage.channel.id)) {
-            console.log(`[Message Update] : ${newMessage.content} | ${oldMessage.content}`);
-            const payload = {
-                service: 'messageUpdate',
-                timestamp: new Date().toISOString(),
-                // data: {
-                id: newMessage.id,
-                content: newMessage.content,
-                channel_id: newMessage.channel.id,
-                guild_id: newMessage.guild.id,
-                author_id: newMessage.author.id,
-
-                // }
-
-                id: newMessage.id,
-                author: {
-                    id: newMessage.author.id,
+            // Log the core message update event
+            await logger.logEvent({
+                eventType: 'messageUpdate',
+                eventData: {
+                    guildId: newMessage.guild?.id,
+                    channelId: newMessage.channel.id,
+                    userId: newMessage.author.id,
                     username: newMessage.author.username,
-                    global_name: newMessage.author.globalName,
-                    server_name: newMessage.author.displayName,
-                    discriminator: newMessage.author.discriminator,
-                    bot: newMessage.author.bot,
-                    avatar: newMessage.author.avatarURL() || null
-                },
-                channel: {
-                    id: newMessage.channel.id,
-                    name: newMessage.channel.name,
-                    category: newMessage.channel.parent?.name || null
-                },
-                content: newMessage.content,
-                timestamp: newMessage.createdAt.toISOString(),
+                    oldContentLength: oldMessage.content.length,
+                    newContentLength: newMessage.content.length,
+                    hasAttachments: newMessage.attachments.size > 0
+                }
+            });
+
+            const channelList = await getCache('channels');
+
+            if (!channelList || channelList.length === 0) {
+                const channels = getChannel();
+                setCache('channels', channels);
+                return;
             }
 
-            // Send to n8n
-            if (!await sendToN8n(payload)) {
-                console.log(`[] Failed to process message `);
+            if (!newMessage.guild) return;
+
+            if (channelExists(channelList, newMessage.channel.id)) {
+                console.log(`[${new Date().toISOString()}] [MESSAGE-UPDATE] ${newMessage.author.username}-${newMessage.author.id}: ${newMessage.content.substring(0, 50)}...`);
+                
+                const payload = {
+                    service: 'messageUpdate',
+                    timestamp: new Date().toISOString(),
+                    id: newMessage.id,
+                    content: newMessage.content,
+                    channel_id: newMessage.channel.id,
+                    guild_id: newMessage.guild.id,
+                    author_id: newMessage.author.id,
+                    author: {
+                        id: newMessage.author.id,
+                        username: newMessage.author.username,
+                        global_name: newMessage.author.globalName,
+                        server_name: newMessage.author.displayName,
+                        discriminator: newMessage.author.discriminator,
+                        bot: newMessage.author.bot,
+                        avatar: newMessage.author.avatarURL() || null
+                    },
+                    channel: {
+                        id: newMessage.channel.id,
+                        name: newMessage.channel.name,
+                        category: newMessage.channel.parent?.name || null
+                    }
+                };
+
+                // Send to n8n
+                await sendToN8n(payload);
             }
-        } else if (!channelExists(channelList, newMessage.channel.id)) {
-            // console.log(`Channel [${message.channel.name}] is not registered. Skipping message processing.`);
-            return; 
-        } 
 
-
+        } catch (error) {
+            // Log any errors during message update processing
+            await logger.error('messageUpdate.processing_failed', 'Message update processing failed', error, {
+                category: 'EVENT',
+                guildId: newMessage.guild?.id,
+                channelId: newMessage.channel.id,
+                userId: newMessage.author.id,
+                details: { messageId: newMessage.id }
+            });
+        }
     }
-}
+};
 
 
 
@@ -79,10 +92,10 @@ module.exports = {
 async function sendToN8n(payload) {
     try {
         const response = await axios.post(process.env.N8N_WEBHOOK, payload, { timeout: 5000 });
-        console.log(`Successfully sent message ${payload.id} to n8n`);
+        // console.log(`[${new Date().toISOString()}] [N8N-SUCCESS] Successfully sent message ${payload.id} to n8n`);
         return true;
     } catch (error) {
-        console.log(`Failed to send to n8n: ${error}`);
+        // console.log(`[${new Date().toISOString()}] [N8N-ERROR] Failed to send to n8n: ${error}`);
         return false;
     }
 }

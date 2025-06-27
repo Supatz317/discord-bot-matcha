@@ -40,7 +40,7 @@ export async function execute(interaction) {
         }
     };
 
-    console.log(new Date().toISOString());
+    // console.log(new Date().toISOString());
     try {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         // console.log("1");

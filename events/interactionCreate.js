@@ -1,15 +1,33 @@
 import { ButtonStyle, Events } from 'discord.js';
-import { StringSelectMenuBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder } from 'discord.js'; // Import here if not already imported
+import { StringSelectMenuBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder } from 'discord.js';
+import { performance } from 'perf_hooks';
+import logger from '../utils/logger.js';
 
 export const name = Events.InteractionCreate;
 export async function execute(interaction) {
+    try {
+        // Log the core interaction event
+        await logger.logEvent({
+            eventType: 'interactionCreate',
+            eventData: {
+                guildId: interaction.guildId,
+                channelId: interaction.channelId,
+                userId: interaction.user.id,
+                username: interaction.user.username,
+                interactionType: interaction.type,
+                commandName: interaction.isChatInputCommand() ? interaction.commandName : null,
+                customId: interaction.customId || null
+            }
+        });
 
-	if (interaction.isChatInputCommand()) {
+        if (interaction.isChatInputCommand()) {
             const command = interaction.client.commands.get(interaction.commandName);
             if (!command) {
                 console.error(`No command matching ${interaction.commandName} was found.`);
                 return;
-            }            try {
+            }
+            
+            try {
                 // Execute the command's logic
                 await command.execute(interaction);
             } catch (error) {
@@ -150,7 +168,17 @@ export async function execute(interaction) {
             });
         }
 
-		
-	
-
+    } catch (error) {
+        // Log any errors during interaction processing
+        await logger.error('interaction.processing_failed', 'Interaction processing failed', error, {
+            category: 'EVENT',
+            guildId: interaction.guildId,
+            channelId: interaction.channelId,
+            userId: interaction.user.id,
+            details: { 
+                interactionId: interaction.id,
+                interactionType: interaction.type
+            }
+        });
+    }
 }

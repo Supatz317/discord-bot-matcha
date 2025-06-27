@@ -4,7 +4,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "bun --watch index.js"
+    "start": "bun --watch index.js",
+    "setup": "bun startup.js",
+    "migrate": "bun database/migrate.js",
+    "analytics": "bun -e \"import analytics from './database/analytics.js'; analytics.printReport(24)\""
   },
   "keywords": [],
   "author": "",

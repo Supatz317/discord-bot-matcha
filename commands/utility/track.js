@@ -65,13 +65,13 @@ export async function execute(interaction) {
 
 }
 
-async function sendToN8n(data) {
-    try {
-        const response = await axios.post(process.env.N8N_WEBHOOK, data, { timeout: 5000 });
-        console.log(`Successfully sent message ${data.id} to n8n`);
-        return true;
-    } catch (error) {
-        console.log(`Failed to send to n8n: ${error.message}`);
-        return false;
-    }
-}
+// async function sendToN8n(data) {
+//     try {
+//         const response = await axios.post(process.env.N8N_WEBHOOK, data, { timeout: 5000 });
+//         // console.log(`Successfully sent message ${data.id} to n8n`);
+//         return true;
+//     } catch (error) {
+//         // console.log(`Failed to send to n8n: ${error.message}`);
+//         return false;
+//     }
+// }
