@@ -22,6 +22,7 @@ module.exports = {
             await logger.logEvent({
                 eventType: 'messageUpdate',
                 eventData: {
+                    messageId: newMessage.id,
                     guildId: newMessage.guild?.id,
                     channelId: newMessage.channel.id,
                     userId: newMessage.author.id,

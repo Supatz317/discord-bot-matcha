@@ -153,9 +153,22 @@ class EventLogger {
 
         const color = colors[level] || '\x1b[37m'; // Default to white
         
-        // Format context for display
-        const contextStr = Object.entries(context)
-            .filter(([key, value]) => value !== null && value !== undefined)
+        // Format context for display - prioritize important fields
+        const contextEntries = Object.entries(context)
+            .filter(([key, value]) => value !== null && value !== undefined);
+        
+        // Sort to show important fields first
+        const priorityFields = ['messageId', 'userId', 'interactionId', 'commandName', 'guildId', 'channelId'];
+        const sortedEntries = contextEntries.sort((a, b) => {
+            const aIndex = priorityFields.indexOf(a[0]);
+            const bIndex = priorityFields.indexOf(b[0]);
+            if (aIndex === -1 && bIndex === -1) return 0;
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            return aIndex - bIndex;
+        });
+
+        const contextStr = sortedEntries
             .map(([key, value]) => `${key}=${value}`)
             .join(' ');
 
@@ -327,15 +340,22 @@ class EventLogger {
             // Common properties
             if (eventData.guildId) context.guildId = eventData.guildId;
             if (eventData.channelId) context.channelId = eventData.channelId;
+            if (eventData.messageId) context.messageId = eventData.messageId;
             if (eventData.id) context.messageId = eventData.id;
 
-            // User context
+            // User context - extract from multiple possible locations
+            if (eventData.userId) context.userId = eventData.userId;
             if (eventData.author?.id) context.userId = eventData.author.id;
             if (eventData.user?.id) context.userId = eventData.user.id;
             if (eventData.member?.user?.id) context.userId = eventData.member.user.id;
 
             // Interaction context
+            if (eventData.interactionId) context.interactionId = eventData.interactionId;
             if (eventData.interaction?.id) context.interactionId = eventData.interaction.id;
+
+            // Command context
+            if (eventData.commandName) context.commandName = eventData.commandName;
+            if (eventData.command?.name) context.commandName = eventData.command.name;
         }
 
         return context;

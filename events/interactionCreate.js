@@ -10,6 +10,7 @@ export async function execute(interaction) {
         await logger.logEvent({
             eventType: 'interactionCreate',
             eventData: {
+                interactionId: interaction.id,
                 guildId: interaction.guildId,
                 channelId: interaction.channelId,
                 userId: interaction.user.id,
