@@ -2,9 +2,10 @@ const { Client, GatewayIntentBits, Events } = require('discord.js');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const { getChannel, setCache, getCache } = require('../database/db.js');
-
-// Import logger
 const logger = require('../utils/logger.js').default;
+dotenv.config();
+
+const attendance = [process.env.ATTENDANCE_TRAINEE_CHANNEL_ID, process.env.ATTENDANCE_EMPLOYEE_CHANNEL_ID, process.env.ATTENDANCE_DEMO];
 
 function channelExists(list, channelId) {
     return list.some(c => c.channel_id === channelId);
@@ -43,8 +44,35 @@ module.exports = {
 
             if (!newMessage.guild) return;
 
+            // leave message | attendance message
+            if (attendance.includes(message.channel.id)) {
+            
+                payload = {
+                    service: 'attendance',
+                    id: message.id,
+                    author: {
+                        id: message.author.id,
+                        username: message.author.username,
+                        global_name: message.author.globalName,
+                        server_name: message.author.displayName,
+                        discriminator: message.author.discriminator,
+                        bot: message.author.bot,
+                        avatar: message.author.avatarURL() || null
+                    },
+                    channel: {
+                        id: message.channel.id,
+                        name: message.channel.name,
+                        category: message.channel.parent?.name || null
+                    },
+                    content: message.content,
+                    timestamp: message.createdAt.toISOString(),
+
+                }
+            }
+
+            // standup 
             if (channelExists(channelList, newMessage.channel.id)) {
-                console.log(`[${new Date().toISOString()}] [MESSAGE-UPDATE] ${newMessage.author.username}-${newMessage.author.id}: ${newMessage.content.substring(0, 50)}...`);
+                // console.log(`[${new Date().toISOString()}] [MESSAGE-UPDATE] ${newMessage.author.username}-${newMessage.author.id}: ${newMessage.content.substring(0, 50)}...`);
                 
                 const payload = {
                     service: 'messageUpdate',
