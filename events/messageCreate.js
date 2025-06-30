@@ -70,7 +70,7 @@ module.exports = {
 
             // leave message | attendance message
             if (attendance.includes(message.channel.id)) {
-                console.log(`[${new Date().toISOString()}] [ATTENDANCE] ${message.author.username}-${message.author.id}: ${message.content.substring(0, 50)}...`);
+                // console.log(`[${new Date().toISOString()}] [ATTENDANCE] ${message.author.username}-${message.author.id}: ${message.content.substring(0, 50)}...`);
             
             // Prepare data for n8n 
             messageData = {
@@ -102,7 +102,7 @@ module.exports = {
                 if (message.author.id != '1365964985871630447') { // ignore matcha bot
                     // regex match author id by <@123456789012345678>
                     const author_id = message.content.match(/<@!?(\d+)>/);
-                    console.log(`[${new Date().toISOString()}] [MESSAGE-CREATE] ${message.author.username}-${author_id}: ${message.content.substring(0, 50).replaceAll('\n', '')}...`);
+                    // console.log(`[${new Date().toISOString()}] [MESSAGE-CREATE] ${message.author.username}-${author_id}: ${message.content.substring(0, 50).replaceAll('\n', '')}...`);
 
                     messageData = {
                         service: 'botMessage',
@@ -122,7 +122,7 @@ module.exports = {
             }
             // Prepare data for n8n
             else {
-            console.log(`[${new Date().toISOString()}] [MESSAGE-CREATE] ${message.author.username}-${message.author.id}: ${message.content.substring(0, 50).replaceAll('\n', '')}...`);
+            // console.log(`[${new Date().toISOString()}] [MESSAGE-CREATE] ${message.author.username}-${message.author.id}: ${message.content.substring(0, 50).replaceAll('\n', '')}...`);
                 messageData = {
                 service: 'messageCreate',
                 id: message.id,
