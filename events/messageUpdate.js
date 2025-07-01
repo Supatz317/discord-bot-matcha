@@ -44,31 +44,7 @@ module.exports = {
 
             if (!newMessage.guild) return;
 
-            // leave message | attendance message
-            if (attendance.includes(message.channel.id)) {
             
-                payload = {
-                    service: 'attendance',
-                    id: message.id,
-                    author: {
-                        id: message.author.id,
-                        username: message.author.username,
-                        global_name: message.author.globalName,
-                        server_name: message.author.displayName,
-                        discriminator: message.author.discriminator,
-                        bot: message.author.bot,
-                        avatar: message.author.avatarURL() || null
-                    },
-                    channel: {
-                        id: message.channel.id,
-                        name: message.channel.name,
-                        category: message.channel.parent?.name || null
-                    },
-                    content: message.content,
-                    timestamp: message.createdAt.toISOString(),
-
-                }
-            }
 
             // standup 
             if (channelExists(channelList, newMessage.channel.id)) {
@@ -99,6 +75,34 @@ module.exports = {
                 };
 
                 // Send to n8n
+                await sendToN8n(payload);
+            }
+
+            // leave message | attendance message
+            if (attendance.includes(newMessage.channel.id)) {
+            
+                payload = {
+                    service: 'attendance',
+                    id: newMessage.id,
+                    author: {
+                        id: newMessage.author.id,
+                        username: newMessage.author.username,
+                        global_name: newMessage.author.globalName,
+                        server_name: newMessage.author.displayName,
+                        discriminator: newMessage.author.discriminator,
+                        bot: newMessage.author.bot,
+                        avatar: newMessage.author.avatarURL() || null
+                    },
+                    channel: {
+                        id: newMessage.channel.id,
+                        name: newMessage.channel.name,
+                        category: newMessage.channel.parent?.name || null
+                    },
+                    content: newMessage.content,
+                    timestamp: newMessage.createdAt.toISOString(),
+
+                }
+
                 await sendToN8n(payload);
             }
 
